@@ -1,0 +1,8 @@
+gin_mode: "debug"
+port: "8000"
+db_config:
+  host: ""
+  port: ""
+  username: ""
+  password: ""
+  database_name: ""

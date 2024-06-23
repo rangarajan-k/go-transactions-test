@@ -6,8 +6,9 @@ import (
 )
 
 type MainConfig struct {
-	Port     int      `yaml:"port" mapStructure:"port"`
-	DBConfig DBConfig `yaml:"dbConfig" mapStructure:"dbConfig"`
+	Port     string   `yaml:"port" mapStructure:"port"`
+	DBConfig DBConfig `yaml:"db_config" mapStructure:"db_config"`
+	GinMode  string   `yaml:"gin_mode" mapStructure:"gin_mode"`
 }
 
 type DBConfig struct {
