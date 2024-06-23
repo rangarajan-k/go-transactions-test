@@ -67,7 +67,7 @@ Pre-requisites : Go 1.22.4 \
 Supported OS: Windows/ Mac/ Linux \
 PostgressDB server : If you already have a server running you can give the address and credentials in `config.json` file
 
-Setup PostgressDB using Docker : 
+Setup PostgressDB using Docker :\
 Make sure docker is installed and running : https://docs.docker.com/engine/install/
 
 Pull the PostgressDB docker image : `docker pull postgres` \
@@ -79,7 +79,7 @@ Next we can build and start out go application
 - Install the go modules : `go get`
 - Build & Run application : `go run main.go`
 
-View Swagger Documentation for APIs : http://localhost:9000/swagger/index.html\
+View Swagger Documentation for APIs : http://localhost:9000/swagger/index.html \
 Swagger file location : `./docs/swagger.yaml`
 
 ### Assumptions: 
