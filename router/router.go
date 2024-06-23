@@ -7,7 +7,7 @@ import (
 
 type IRouter interface {
 	InitRoutes(container dicontainer.IDiContainer)
-	GetMux() *gin.Engine
+	GetEngine() *gin.Engine
 }
 
 type Router struct {
@@ -36,6 +36,6 @@ func (r *Router) InitRoutes(container dicontainer.IDiContainer) {
 	r.engine.POST("/transactions", di.TransactionServiceController.SubmitTransaction)
 }
 
-func (r *Router) GetMux() *gin.Engine {
+func (r *Router) GetEngine() *gin.Engine {
 	return r.engine
 }

@@ -6,17 +6,17 @@ import (
 )
 
 type MainConfig struct {
-	Port     string   `yaml:"port" mapStructure:"port"`
-	DBConfig DBConfig `yaml:"db_config" mapStructure:"db_config"`
-	GinMode  string   `yaml:"gin_mode" mapStructure:"gin_mode"`
+	Port     int      `json:"port" mapstructure:"port"`
+	GinMode  string   `json:"gin_mode" mapstructure:"gin_mode"`
+	DBConfig DBConfig `json:"db_config" mapstructure:"db_config"`
 }
 
 type DBConfig struct {
-	Host         string `yaml:"host" mapStructure:"host"`
-	Port         int    `yaml:"port" mapStructure:"port"`
-	Username     string `yaml:"username" mapStructure:"username"`
-	Password     string `yaml:"password" mapStructure:"password"`
-	DatabaseName string `yaml:"database_name" mapStructure:"database_name"`
+	Host         string `json:"host" mapstructure:"host"`
+	Port         int    `json:"port" mapstructure:"port"`
+	Username     string `json:"username" mapstructure:"username"`
+	Password     string `json:"password" mapstructure:"password"`
+	DatabaseName string `json:"database_name" mapstructure:"database_name"`
 }
 
 func LoadMainConfig(filepath string) *MainConfig {
@@ -32,6 +32,5 @@ func LoadMainConfig(filepath string) *MainConfig {
 	if err != nil {
 		panic(fmt.Errorf("fatal error unmarshalling config file: %s", err))
 	}
-
 	return &mainConfig
 }

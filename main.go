@@ -7,9 +7,8 @@ import (
 )
 
 func main() {
-	var configFilePath, serverPort string
+	var configFilePath string
 	flag.StringVar(&configFilePath, "config", "config.json", "path to configuration file")
-	flag.StringVar(&serverPort, "port", "8080", "port to listen on")
 
 	//start app with required config
 	application := app.New(configFilePath)

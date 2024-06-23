@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"go-transactions-test/config"
+	"go-transactions-test/datastore"
 	"go-transactions-test/dicontainer"
 	"go-transactions-test/router"
 	"log"
@@ -33,14 +34,15 @@ func New(filepath string) ITransactionSvcApp {
 func (app *transactionSvcApp) Init(filepath string) {
 
 	//Initialize DB, Controller, Util dependencies
+	dbClient := datastore.NewPgClient(app.mainConfig.DBConfig)
 	diContainer := dicontainer.NewDiContainer(app.mainConfig)
-	diContainer.StartDependenciesInjection() //Initialize Router
+	diContainer.StartDependenciesInjection(dbClient) //Initialize Router
 	app.router = router.NewRouter(app.mainConfig.GinMode)
 	app.router.InitRoutes(diContainer)
 
 	app.httpServer = &http.Server{
-		Addr:    fmt.Sprintf(":%s", app.mainConfig.Port),
-		Handler: app.router.GetMux(),
+		Addr:    fmt.Sprintf(":%d", app.mainConfig.Port),
+		Handler: app.router.GetEngine(),
 	}
 }
 
@@ -56,15 +58,3 @@ func (app *transactionSvcApp) Start() error {
 
 func (app *transactionSvcApp) GetWaitGroupVar() *sync.WaitGroup  { return &app.wg }
 func (app *transactionSvcApp) GetMainConfig() *config.MainConfig { return app.mainConfig }
-
-/*func (app *transactionSvcApp) processShutdown() {
-	// We received an interrupt signal, shut down.
-	if err := app.httpServer.Shutdown(context.Background()); err != nil {
-		// Error from closing listeners, or context timeout:
-		log.Fatalf("HTTP server Shutdown: %v", err)
-	}
-	log.Printf("Wait for %v to finish processing", 5*time.Second)
-	time.Sleep(5 * time.Second)
-	log.Printf("HTTP server Shutting down.")
-	os.Exit(0)
-}*/

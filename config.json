@@ -1,0 +1,11 @@
+{
+  "port": 9000,
+  "gin_mode": "debug",
+  "db_config": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "postgres",
+    "password": "postgres123",
+    "database_name": "postgres"
+  }
+}

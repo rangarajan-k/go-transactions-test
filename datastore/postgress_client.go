@@ -5,6 +5,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"go-transactions-test/config"
+	"log"
 	"strconv"
 )
 
@@ -24,7 +25,7 @@ func NewPgClient(config config.DBConfig) *pg.DB {
 	//Create Initial Schema
 	err := CreateSchema(db)
 	if err != nil {
-		panic(err)
+		log.Printf("Error creating schema: %v", err)
 	}
 
 	return db
@@ -38,10 +39,10 @@ func CreateSchema(db *pg.DB) error {
 
 	for _, model := range models {
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-			Temp: true,
+			Temp: false,
 		})
 		if err != nil {
-			return err
+			log.Printf("Error creating schema: %v", err)
 		}
 	}
 	return nil
