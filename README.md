@@ -35,7 +35,7 @@ Config : Read config file from disk and apply to config map\
 Controller : Main API Logic\
 DataStore : Handle DB connection & queries\
 DiContainer : Dependency injection container when starting application\
-Router : Initialize HTTP server endpoints and associate with controllers
+Router : Initialize HTTP server endpoints and associate with controllers\
 Docs : Contains swagger documentation
 
 ## Configuration
