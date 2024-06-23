@@ -20,13 +20,15 @@ type DiContainer struct {
 
 func NewDiContainer(config *config.MainConfig) IDiContainer { return &DiContainer{Config: config} }
 
+/* We can choose what dependencies to give to which API controller groups
+In this case its single controller only
+This can include any external connectors like http client / queue stores etc */
+
 func (di *DiContainer) StartDependenciesInjection(pgClient *pg.DB) {
-	//initialise pgClient here
+
 	di.PgClient = pgClient
 	di.TransactionServiceController = controller.NewTransactionServiceController(di.Config, di.PgClient)
 }
 
-func (di *DiContainer) GetDiContainer() *DiContainer {
-	return di
-}
-func (di *DiContainer) GetDbClient() *pg.DB { return di.PgClient }
+func (di *DiContainer) GetDiContainer() *DiContainer { return di }
+func (di *DiContainer) GetDbClient() *pg.DB          { return di.PgClient }

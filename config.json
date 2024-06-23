@@ -7,5 +7,12 @@
     "username": "postgres",
     "password": "postgres123",
     "database_name": "postgres"
+  },
+  "swagger_config": {
+    "version": 1,
+    "host": "http://localhost:9000",
+    "base_path": "/",
+    "title": "Transaction Service APIs",
+    "description": "Transactions Service for creating accounts and posting transactions"
   }
 }

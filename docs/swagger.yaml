@@ -1,0 +1,112 @@
+definitions:
+  controller.CreateAccountRequest:
+    properties:
+      account_id:
+        type: integer
+      initial_balance:
+        type: number
+    type: object
+  datastore.Account:
+    properties:
+      account_id:
+        type: integer
+      balance:
+        type: number
+    type: object
+  datastore.Transaction:
+    properties:
+      amount:
+        type: number
+      destination_account_id:
+        type: integer
+      id:
+        type: integer
+      source_account_id:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /accounts:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/controller.CreateAccountRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/datastore.Account'
+        "400":
+          description: Missing/Invalid Params
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      summary: Creates an account for the customer
+  /accounts/:account_id:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 'Example: 12121'
+        in: path
+        name: account_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/datastore.Account'
+        "400":
+          description: Missing/Invalid params
+          schema:
+            type: string
+        "404":
+          description: Resource not found
+          schema:
+            type: string
+        "500":
+          description: Something went wrong
+          schema:
+            type: string
+      summary: Queries an exiting customer account based on account id
+  /transactions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/datastore.Transaction'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/datastore.Transaction'
+        "400":
+          description: Missing/Invalid Params
+          schema:
+            type: string
+        "404":
+          description: Resource not found
+          schema:
+            type: string
+        "500":
+          description: Something Went Wrong
+          schema:
+            type: string
+      summary: Posts a transaction against a source account and destination account
+swagger: "2.0"

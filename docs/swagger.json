@@ -1,0 +1,176 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/accounts": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Creates an account for the customer",
+                "parameters": [
+                    {
+                        "description": "Request Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.CreateAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/datastore.Account"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing/Invalid Params",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/accounts/:account_id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Queries an exiting customer account based on account id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Example: 12121",
+                        "name": "account_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/datastore.Account"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing/Invalid params",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "summary": "Posts a transaction against a source account and destination account",
+                "parameters": [
+                    {
+                        "description": "Request Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/datastore.Transaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/datastore.Transaction"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing/Invalid Params",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Something Went Wrong",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.CreateAccountRequest": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "integer"
+                },
+                "initial_balance": {
+                    "type": "number"
+                }
+            }
+        },
+        "datastore.Account": {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "number"
+                }
+            }
+        },
+        "datastore.Transaction": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "destination_account_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "source_account_id": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

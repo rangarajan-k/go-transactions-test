@@ -8,13 +8,11 @@ import (
 	"go-transactions-test/router"
 	"log"
 	"net/http"
-	"sync"
 )
 
 type ITransactionSvcApp interface {
 	Init(string2 string)
 	Start() error
-	GetWaitGroupVar() *sync.WaitGroup
 	GetMainConfig() *config.MainConfig
 }
 
@@ -22,7 +20,6 @@ type transactionSvcApp struct {
 	mainConfig *config.MainConfig
 	httpServer *http.Server
 	router     router.IRouter
-	wg         sync.WaitGroup
 }
 
 func New(filepath string) ITransactionSvcApp {
@@ -40,6 +37,7 @@ func (app *transactionSvcApp) Init(filepath string) {
 	app.router = router.NewRouter(app.mainConfig.GinMode)
 	app.router.InitRoutes(diContainer)
 
+	//Start Http server here
 	app.httpServer = &http.Server{
 		Addr:    fmt.Sprintf(":%d", app.mainConfig.Port),
 		Handler: app.router.GetEngine(),
@@ -56,5 +54,4 @@ func (app *transactionSvcApp) Start() error {
 	return nil
 }
 
-func (app *transactionSvcApp) GetWaitGroupVar() *sync.WaitGroup  { return &app.wg }
 func (app *transactionSvcApp) GetMainConfig() *config.MainConfig { return app.mainConfig }

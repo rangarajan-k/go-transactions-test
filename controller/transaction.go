@@ -33,6 +33,15 @@ func NewTransactionServiceController(config *config.MainConfig, pgClient *pg.DB)
 	return &transactionServiceController{config, pgClient}
 }
 
+// CreateAccount godoc
+// @Summary Creates an account for the customer
+// @Accept json
+// @Product json
+// @Param payload body CreateAccountRequest true "Request Payload"
+// @Success 201 {object} datastore.Account
+// @Failure 400	{string} string "Missing/Invalid Params"
+// @Failure 500 {string} string "Something went wrong"
+// @Router /accounts [post]
 func (c *transactionServiceController) CreateAccount(ctx *gin.Context) {
 	var createAccountRequest *CreateAccountRequest
 	err := ctx.BindJSON(&createAccountRequest)
@@ -60,6 +69,16 @@ func (c *transactionServiceController) CreateAccount(ctx *gin.Context) {
 	c.HandleSuccessResponse(ctx, http.StatusCreated, insertAccount)
 }
 
+// QueryAccount godoc
+// @Summary Queries an exiting customer account based on account id
+// @Accept json
+// @Product json
+// @Param account_id path string true "Example: 12121"
+// @Success 200 {object} datastore.Account
+// @Failure 400	{string} string "Missing/Invalid params"
+// @Failure 404	{string} string "Resource not found"
+// @Failure 500 {string} string "Something went wrong"
+// @Router /accounts/:account_id [get]
 func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 	//req := ctx.Request
 	accountId := ctx.Param("account_id")
@@ -90,6 +109,16 @@ func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 	c.HandleSuccessResponse(ctx, http.StatusOK, result)
 }
 
+// SubmitTransaction godoc
+// @Summary Posts a transaction against a source account and destination account
+// @Accept json
+// @Product json
+// @Param payload body datastore.Transaction true "Request Payload"
+// @Success 200 {object} datastore.Transaction
+// @Failure 400	{string} string "Missing/Invalid Params"
+// @Failure 404	{string} string "Resource not found"
+// @Failure 500 {string} string "Something Went Wrong"
+// @Router /transactions [post]
 func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	var submitTransactionRequest *datastore.Transaction
 	err := ctx.BindJSON(&submitTransactionRequest)
@@ -107,7 +136,12 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	//get the accounts first check if they are valid
 	var ids = []int{submitTransactionRequest.SourceAccountId, submitTransactionRequest.DestinationAccountId}
 
-	results, err := datastore.GetMultipleAccountDetailsQuery(c.pgClient, ids)
+	/* since this is a multi table update operation use transaction to rollback in case of any errors
+	we can also implement some form of locking here either using dblock / distributed redis lock
+	to avoid simultaneous updates on same resource */
+	tx, _ := c.pgClient.Begin()
+	defer tx.Close()
+	results, err := datastore.GetMultipleAccountDetailsQuery(tx, ids)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when querying account details")
@@ -130,24 +164,27 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	destinationAccount.BalanceAmount = destinationAccount.BalanceAmount + submitTransactionRequest.Amount
 	//update source and destination accounts
 	var accountsToUpdate = []*datastore.Account{sourceAccount, destinationAccount}
-	err = datastore.UpdateAccountBalanceQuery(c.pgClient, accountsToUpdate)
+	err = datastore.UpdateAccountBalanceQuery(tx, accountsToUpdate)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when updating account balance")
+		tx.Rollback()
 		return
 	}
 	//write a transaction log
-	err = datastore.SubmitTransactionQuery(c.pgClient, submitTransactionRequest)
+	err = datastore.SubmitTransactionQuery(tx, submitTransactionRequest)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when submitting transaction")
+		tx.Rollback()
 		return
 	}
+	tx.Commit()
 	c.HandleSuccessResponse(ctx, http.StatusCreated, submitTransactionRequest)
 }
 
-func (c *transactionServiceController) HandleErrorResponse(ctx *gin.Context, statusCode int, error_message string) {
-	ctx.AbortWithStatusJSON(statusCode, gin.H{"error": error_message})
+func (c *transactionServiceController) HandleErrorResponse(ctx *gin.Context, statusCode int, errorMessage string) {
+	ctx.AbortWithStatusJSON(statusCode, gin.H{"error": errorMessage})
 }
 func (c *transactionServiceController) HandleSuccessResponse(ctx *gin.Context, statusCode int, data interface{}) {
 	ctx.IndentedJSON(statusCode, data)

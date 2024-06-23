@@ -16,14 +16,7 @@ type Transaction struct {
 	Amount               float32 `pg:",use_zero" json:"amount"`
 }
 
-func (a Account) String() string {
-	return ""
-}
-
-func (t Transaction) String() string {
-	return ""
-}
-
+// CreateAccountQuery straight forward create account if account id doesnt exist
 func CreateAccountQuery(db *pg.DB, model *Account) error {
 	_, err := db.Model(model).Insert()
 	if err != nil {
@@ -32,14 +25,7 @@ func CreateAccountQuery(db *pg.DB, model *Account) error {
 	return nil
 }
 
-func SubmitTransactionQuery(db *pg.DB, model *Transaction) error {
-	_, err := db.Model(model).Insert()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
+// GetAccountDetailsQuery queries and returns single account detail based on account id
 func GetAccountDetailsQuery(db *pg.DB, model *Account) (*Account, error) {
 	err := db.Model(model).WherePK().Select()
 	if err != nil {
@@ -48,17 +34,28 @@ func GetAccountDetailsQuery(db *pg.DB, model *Account) (*Account, error) {
 	return model, nil
 }
 
-func GetMultipleAccountDetailsQuery(db *pg.DB, ids []int) ([]*Account, error) {
+// GetMultipleAccountDetailsQuery takes multiple account ids as inputs then returns array of structs
+func GetMultipleAccountDetailsQuery(tx *pg.Tx, ids []int) ([]*Account, error) {
 	var models []*Account
-	err := db.Model(&models).Where("account_id in (?)", pg.In(ids)).Select()
+	err := tx.Model(&models).Where("account_id in (?)", pg.In(ids)).Select()
 	if err != nil {
 		return []*Account{}, err
 	}
 	return models, nil
 }
 
-func UpdateAccountBalanceQuery(db *pg.DB, models []*Account) error {
-	_, err := db.Model(&models).WherePK().Update()
+// UpdateAccountBalanceQuery Update multiple accounts passed as array of structs based on the primary key
+func UpdateAccountBalanceQuery(tx *pg.Tx, models []*Account) error {
+	_, err := tx.Model(&models).WherePK().Update()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SubmitTransactionQuery create a transaction audit entry
+func SubmitTransactionQuery(tx *pg.Tx, model *Transaction) error {
+	_, err := tx.Model(model).Insert()
 	if err != nil {
 		return err
 	}
