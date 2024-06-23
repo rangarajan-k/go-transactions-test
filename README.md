@@ -23,6 +23,10 @@ Main Go Dependencies : Gin, Go-Pg, Viper \
 ├── go.mod\
 ├── go.sum\
 ├── main.go\
+├── docs\
+│├── docs.go\
+│├── swagger.json\
+│└── swagger.yaml\
 └── router\
   └── router.go
 
@@ -32,6 +36,7 @@ Controller : Main API Logic\
 DataStore : Handle DB connection & queries\
 DiContainer : Dependency injection container when starting application\
 Router : Initialize HTTP server endpoints and associate with controllers
+Docs : Contains swagger documentation
 
 ## Configuration
 Default config that will be used when using PostgressDB pulled from docker.
