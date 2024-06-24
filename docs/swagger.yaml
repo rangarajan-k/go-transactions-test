@@ -6,6 +6,11 @@ definitions:
       initial_balance:
         type: number
     type: object
+  controller.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
   datastore.Account:
     properties:
       account_id:
@@ -44,13 +49,13 @@ paths:
           schema:
             $ref: '#/definitions/datastore.Account'
         "400":
-          description: Missing/Invalid Params
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
         "500":
-          description: Something went wrong
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
       summary: Creates an account for the customer
   /accounts/:account_id:
     get:
@@ -68,17 +73,17 @@ paths:
           schema:
             $ref: '#/definitions/datastore.Account'
         "400":
-          description: Missing/Invalid params
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
         "404":
-          description: Resource not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
         "500":
-          description: Something went wrong
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
       summary: Queries an exiting customer account based on account id
   /transactions:
     post:
@@ -97,16 +102,16 @@ paths:
           schema:
             $ref: '#/definitions/datastore.Transaction'
         "400":
-          description: Missing/Invalid Params
+          description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
         "404":
-          description: Resource not found
+          description: Not Found
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
         "500":
-          description: Something Went Wrong
+          description: Internal Server Error
           schema:
-            type: string
+            $ref: '#/definitions/controller.ErrorResponse'
       summary: Posts a transaction against a source account and destination account
 swagger: "2.0"

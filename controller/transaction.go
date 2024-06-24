@@ -29,6 +29,10 @@ type CreateAccountRequest struct {
 	InitialBalance float32 `json:"initial_balance"`
 }
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func NewTransactionServiceController(config *config.MainConfig, pgClient *pg.DB) ITransactionServiceController {
 	return &transactionServiceController{config, pgClient}
 }
@@ -39,14 +43,14 @@ func NewTransactionServiceController(config *config.MainConfig, pgClient *pg.DB)
 // @Product json
 // @Param payload body CreateAccountRequest true "Request Payload"
 // @Success 201 {object} datastore.Account
-// @Failure 400	{string} string "Missing/Invalid Params"
-// @Failure 500 {string} string "Something went wrong"
+// @Failure 400	{object} ErrorResponse{}
+// @Failure 500 {object} ErrorResponse{}
 // @Router /accounts [post]
 func (c *transactionServiceController) CreateAccount(ctx *gin.Context) {
 	var createAccountRequest *CreateAccountRequest
 	err := ctx.BindJSON(&createAccountRequest)
 	if err != nil {
-		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error unmarshalling request")
+		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
@@ -75,9 +79,9 @@ func (c *transactionServiceController) CreateAccount(ctx *gin.Context) {
 // @Product json
 // @Param account_id path string true "Example: 12121"
 // @Success 200 {object} datastore.Account
-// @Failure 400	{string} string "Missing/Invalid params"
-// @Failure 404	{string} string "Resource not found"
-// @Failure 500 {string} string "Something went wrong"
+// @Failure 400	{object} ErrorResponse{}
+// @Failure 404	{object} ErrorResponse{}
+// @Failure 500 {object} ErrorResponse{}
 // @Router /accounts/:account_id [get]
 func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 	//req := ctx.Request
@@ -100,10 +104,10 @@ func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 	if readErr != nil {
 		errMessage := fmt.Sprintf("%v", readErr)
 		if errMessage == "pg: no rows in result set" {
-			c.HandleErrorResponse(ctx, http.StatusNotFound, "Invalid Account Id")
+			c.HandleErrorResponse(ctx, http.StatusNotFound, "Account not found")
 			return
 		}
-		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when querying account")
+		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 	c.HandleSuccessResponse(ctx, http.StatusOK, result)
@@ -115,16 +119,16 @@ func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 // @Product json
 // @Param payload body datastore.Transaction true "Request Payload"
 // @Success 200 {object} datastore.Transaction
-// @Failure 400	{string} string "Missing/Invalid Params"
-// @Failure 404	{string} string "Resource not found"
-// @Failure 500 {string} string "Something Went Wrong"
+// @Failure 400	{object} ErrorResponse{}
+// @Failure 404	{object} ErrorResponse{}
+// @Failure 500 {object} ErrorResponse{}
 // @Router /transactions [post]
 func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	var submitTransactionRequest *datastore.Transaction
 	err := ctx.BindJSON(&submitTransactionRequest)
 	if err != nil {
 		log.Printf("%+v", err)
-		c.HandleErrorResponse(ctx, http.StatusBadRequest, "Error unmarshalling request")
+		c.HandleErrorResponse(ctx, http.StatusBadRequest, "Invalid params in the request")
 		return
 	}
 
@@ -144,12 +148,12 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	results, err := datastore.GetMultipleAccountDetailsQuery(tx, ids)
 	if err != nil {
 		log.Printf("%+v", err)
-		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when querying account details")
+		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
 	if len(results) < 2 {
-		c.HandleErrorResponse(ctx, http.StatusBadRequest, "Source account / Destination Account Invalid")
+		c.HandleErrorResponse(ctx, http.StatusNotFound, "Source account / Destination Account Invalid")
 		return
 	}
 	//check if source account has sufficient balance
@@ -167,7 +171,7 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	err = datastore.UpdateAccountBalanceQuery(tx, accountsToUpdate)
 	if err != nil {
 		log.Printf("%+v", err)
-		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when updating account balance")
+		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
 		tx.Rollback()
 		return
 	}
@@ -175,7 +179,7 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	err = datastore.SubmitTransactionQuery(tx, submitTransactionRequest)
 	if err != nil {
 		log.Printf("%+v", err)
-		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Error when submitting transaction")
+		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
 		tx.Rollback()
 		return
 	}
@@ -184,7 +188,8 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 }
 
 func (c *transactionServiceController) HandleErrorResponse(ctx *gin.Context, statusCode int, errorMessage string) {
-	ctx.AbortWithStatusJSON(statusCode, gin.H{"error": errorMessage})
+	err := ErrorResponse{Error: errorMessage}
+	ctx.AbortWithStatusJSON(statusCode, err)
 }
 func (c *transactionServiceController) HandleSuccessResponse(ctx *gin.Context, statusCode int, data interface{}) {
 	ctx.IndentedJSON(statusCode, data)

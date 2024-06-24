@@ -40,15 +40,15 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing/Invalid Params",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Something went wrong",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     }
                 }
@@ -77,21 +77,21 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing/Invalid params",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Resource not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Something went wrong",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     }
                 }
@@ -122,21 +122,21 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing/Invalid Params",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Resource not found",
+                        "description": "Not Found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Something Went Wrong",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/controller.ErrorResponse"
                         }
                     }
                 }
@@ -152,6 +152,14 @@ const docTemplate = `{
                 },
                 "initial_balance": {
                     "type": "number"
+                }
+            }
+        },
+        "controller.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
                 }
             }
         },
