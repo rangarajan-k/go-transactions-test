@@ -31,9 +31,10 @@ func New(filepath string) ITransactionSvcApp {
 func (app *transactionSvcApp) Init(filepath string) {
 
 	//Initialize DB, Controller, Util dependencies
-	dbClient := datastore.NewPgClient(app.mainConfig.DBConfig)
+	pgClient := datastore.NewPostgresClient(app.mainConfig)
+	pgClient.NewPgClient(app.mainConfig.DBConfig)
 	diContainer := dicontainer.NewDiContainer(app.mainConfig)
-	diContainer.StartDependenciesInjection(dbClient) //Initialize Router
+	diContainer.StartDependenciesInjection(pgClient) //Initialize Router
 	app.router = router.NewRouter(app.mainConfig.GinMode)
 	app.router.InitRoutes(diContainer)
 

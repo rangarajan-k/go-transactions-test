@@ -9,7 +9,28 @@ import (
 	"strconv"
 )
 
-func NewPgClient(config config.DBConfig) *pg.DB {
+type IPgClientInterface interface {
+	NewPgClient(config config.DBConfig) *pg.DB
+	CreateSchema(db *pg.DB) error
+	GetDbClient() *pg.DB
+}
+
+type PgClient struct {
+	Config   config.DBConfig
+	DbClient *pg.DB
+}
+
+func NewPostgresClient(mainConfig *config.MainConfig) IPgClientInterface {
+	return &PgClient{
+		Config: mainConfig.DBConfig,
+	}
+}
+
+func (p *PgClient) GetDbClient() *pg.DB {
+	return p.DbClient
+}
+
+func (p *PgClient) NewPgClient(config config.DBConfig) *pg.DB {
 	db := pg.Connect(&pg.Options{
 		Addr:     config.Host + ":" + strconv.Itoa(config.Port),
 		User:     config.Username,
@@ -23,15 +44,15 @@ func NewPgClient(config config.DBConfig) *pg.DB {
 	}
 
 	//Create Initial Schema
-	err := CreateSchema(db)
+	err := p.CreateSchema(db)
 	if err != nil {
 		log.Printf("Error creating schema: %v", err)
 	}
-
+	p.DbClient = db
 	return db
 }
 
-func CreateSchema(db *pg.DB) error {
+func (p *PgClient) CreateSchema(db *pg.DB) error {
 	models := []interface{}{
 		(*Account)(nil),
 		(*Transaction)(nil),

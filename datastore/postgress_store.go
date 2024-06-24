@@ -4,6 +4,24 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
+type IPostgressStore interface {
+	CreateAccountQuery(model *Account) error
+	GetAccountDetailsQuery(model *Account) (*Account, error)
+	GetMultipleAccountDetailsQuery(tx *pg.Tx, ids []int) ([]*Account, error)
+	UpdateAccountBalanceQuery(tx *pg.Tx, models []*Account) error
+	SubmitTransactionQuery(tx *pg.Tx, model *Transaction) error
+}
+
+type PostgressStore struct {
+	DB *pg.DB
+}
+
+func NewPostgressStore(db *pg.DB) IPostgressStore {
+	return &PostgressStore{
+		DB: db,
+	}
+}
+
 type Account struct {
 	AccountId     int     `pg:",pk" json:"account_id"`
 	BalanceAmount float32 `pg:",use_zero" json:"balance"`
@@ -17,7 +35,8 @@ type Transaction struct {
 }
 
 // CreateAccountQuery straight forward create account if account id doesnt exist
-func CreateAccountQuery(db *pg.DB, model *Account) error {
+func (pgStore *PostgressStore) CreateAccountQuery(model *Account) error {
+	db := pgStore.DB
 	_, err := db.Model(model).Insert()
 	if err != nil {
 		return err
@@ -26,7 +45,8 @@ func CreateAccountQuery(db *pg.DB, model *Account) error {
 }
 
 // GetAccountDetailsQuery queries and returns single account detail based on account id
-func GetAccountDetailsQuery(db *pg.DB, model *Account) (*Account, error) {
+func (pgStore *PostgressStore) GetAccountDetailsQuery(model *Account) (*Account, error) {
+	db := pgStore.DB
 	err := db.Model(model).WherePK().Select()
 	if err != nil {
 		return &Account{}, err
@@ -35,7 +55,7 @@ func GetAccountDetailsQuery(db *pg.DB, model *Account) (*Account, error) {
 }
 
 // GetMultipleAccountDetailsQuery takes multiple account ids as inputs then returns array of structs
-func GetMultipleAccountDetailsQuery(tx *pg.Tx, ids []int) ([]*Account, error) {
+func (pgStore *PostgressStore) GetMultipleAccountDetailsQuery(tx *pg.Tx, ids []int) ([]*Account, error) {
 	var models []*Account
 	err := tx.Model(&models).Where("account_id in (?)", pg.In(ids)).Select()
 	if err != nil {
@@ -45,7 +65,7 @@ func GetMultipleAccountDetailsQuery(tx *pg.Tx, ids []int) ([]*Account, error) {
 }
 
 // UpdateAccountBalanceQuery Update multiple accounts passed as array of structs based on the primary key
-func UpdateAccountBalanceQuery(tx *pg.Tx, models []*Account) error {
+func (pgStore *PostgressStore) UpdateAccountBalanceQuery(tx *pg.Tx, models []*Account) error {
 	_, err := tx.Model(&models).WherePK().Update()
 	if err != nil {
 		return err
@@ -54,7 +74,7 @@ func UpdateAccountBalanceQuery(tx *pg.Tx, models []*Account) error {
 }
 
 // SubmitTransactionQuery create a transaction audit entry
-func SubmitTransactionQuery(tx *pg.Tx, model *Transaction) error {
+func (pgStore *PostgressStore) SubmitTransactionQuery(tx *pg.Tx, model *Transaction) error {
 	_, err := tx.Model(model).Insert()
 	if err != nil {
 		return err

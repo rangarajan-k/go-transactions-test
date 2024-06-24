@@ -8,6 +8,7 @@ import (
 	"go-transactions-test/datastore"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -22,6 +23,7 @@ type ITransactionServiceController interface {
 type transactionServiceController struct {
 	config   *config.MainConfig
 	pgClient *pg.DB
+	pgStore  datastore.IPostgressStore
 }
 
 type CreateAccountRequest struct {
@@ -33,8 +35,8 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func NewTransactionServiceController(config *config.MainConfig, pgClient *pg.DB) ITransactionServiceController {
-	return &transactionServiceController{config, pgClient}
+func NewTransactionServiceController(config *config.MainConfig, pgClient datastore.IPgClientInterface, pgStore datastore.IPostgressStore) ITransactionServiceController {
+	return &transactionServiceController{config, pgClient.GetDbClient(), pgStore}
 }
 
 // CreateAccount godoc
@@ -64,7 +66,7 @@ func (c *transactionServiceController) CreateAccount(ctx *gin.Context) {
 		BalanceAmount: createAccountRequest.InitialBalance,
 	}
 
-	err = datastore.CreateAccountQuery(c.pgClient, insertAccount)
+	err = c.pgStore.CreateAccountQuery(insertAccount)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusBadRequest, "Account already exists")
@@ -100,7 +102,7 @@ func (c *transactionServiceController) QueryAccount(ctx *gin.Context) {
 		AccountId: id,
 	}
 	fmt.Println("Making query")
-	result, readErr := datastore.GetAccountDetailsQuery(c.pgClient, AccountModel)
+	result, readErr := c.pgStore.GetAccountDetailsQuery(AccountModel)
 	if readErr != nil {
 		errMessage := fmt.Sprintf("%v", readErr)
 		if errMessage == "pg: no rows in result set" {
@@ -145,7 +147,8 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	to avoid simultaneous updates on same resource */
 	tx, _ := c.pgClient.Begin()
 	defer tx.Close()
-	results, err := datastore.GetMultipleAccountDetailsQuery(tx, ids)
+	fmt.Println(ids)
+	results, err := c.pgStore.GetMultipleAccountDetailsQuery(tx, ids)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
@@ -157,8 +160,15 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 		return
 	}
 	//check if source account has sufficient balance
-	sourceAccount := results[0]
-	destinationAccount := results[1]
+	sourceAccountIndex := slices.IndexFunc(results, func(account *datastore.Account) bool {
+		return account.AccountId == submitTransactionRequest.SourceAccountId
+	})
+	sourceAccount := results[sourceAccountIndex]
+	destinationAccountIndex := slices.IndexFunc(results, func(account *datastore.Account) bool {
+		return account.AccountId == submitTransactionRequest.DestinationAccountId
+	})
+	destinationAccount := results[destinationAccountIndex]
+
 	if sourceAccount.BalanceAmount < submitTransactionRequest.Amount {
 		c.HandleErrorResponse(ctx, http.StatusBadRequest, "Insufficient balance in source account")
 		return
@@ -168,7 +178,7 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 	destinationAccount.BalanceAmount = destinationAccount.BalanceAmount + submitTransactionRequest.Amount
 	//update source and destination accounts
 	var accountsToUpdate = []*datastore.Account{sourceAccount, destinationAccount}
-	err = datastore.UpdateAccountBalanceQuery(tx, accountsToUpdate)
+	err = c.pgStore.UpdateAccountBalanceQuery(tx, accountsToUpdate)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
@@ -176,7 +186,7 @@ func (c *transactionServiceController) SubmitTransaction(ctx *gin.Context) {
 		return
 	}
 	//write a transaction log
-	err = datastore.SubmitTransactionQuery(tx, submitTransactionRequest)
+	err = c.pgStore.SubmitTransactionQuery(tx, submitTransactionRequest)
 	if err != nil {
 		log.Printf("%+v", err)
 		c.HandleErrorResponse(ctx, http.StatusInternalServerError, "Something went wrong")
